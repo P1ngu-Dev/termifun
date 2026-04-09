@@ -1,4 +1,3 @@
-cat << 'EOF' > README.md
 # termifun
 
 > Interactive launcher for fun CLI tools. Discover, launch, and install entertaining terminal utilities from a single command.
@@ -91,4 +90,3 @@ termifun --help     Show help message
 ## License
 
 MIT © 2026
-EOF
