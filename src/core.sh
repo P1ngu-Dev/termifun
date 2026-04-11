@@ -58,15 +58,19 @@ _scan_tools() {
     local bin desc cmd hint
     IFS='|' read -r bin desc cmd hint <<< "$entry"
 
-    # Deduplicate binaries
+    # The real executable to check is the first word of the command
+    local real_bin
+    real_bin="${cmd%% *}"
+
+    # Deduplicate on the real binary
     local already=0
     for seen in "${_seen_bins[@]}"; do
-      [ "$seen" = "$bin" ] && already=1 && break
+      [ "$seen" = "$real_bin" ] && already=1 && break
     done
     [ "$already" = "1" ] && continue
-    _seen_bins+=("$bin")
+    _seen_bins+=("$real_bin")
 
-    if command -v "$bin" >/dev/null 2>&1; then
+    if command -v "$real_bin" >/dev/null 2>&1; then
       INSTALLED+=("$(printf '%-18s  %s' "$bin" "$desc")")
       INSTALLED_CMDS+=("$cmd")
     else

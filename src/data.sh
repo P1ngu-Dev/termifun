@@ -38,7 +38,7 @@ FUN_TOOLS=(
   "moon-buggy|CLI arcade lunar buggy|moon-buggy|dnf:moon-buggy,apt:moon-buggy,pacman:moon-buggy,brew:moon-buggy"
   "nethack|Classic 1987 roguelike|nethack|dnf:nethack,apt:nethack-console,pacman:nethack,brew:nethack"
   "nudoku|Sudoku in the terminal|nudoku|dnf:nudoku,apt:nudoku,pacman:nudoku,brew:nudoku"
-  "2048-cli|The 2048 game in terminal|2048-cli|dnf:2048-cli,apt:2048,pacman:2048-cli,brew:2048"
+  "2048-cli|The 2048 game in terminal|2048|dnf:2048-cli,apt:2048,pacman:2048-cli,brew:2048"
   "termsaver|ASCII screensaver|termsaver|dnf:termsaver,apt:termsaver,pacman:termsaver,brew:termsaver"
   "rev|Reverse text line by line|echo 'termifun' | rev|dnf:util-linux,apt:util-linux,pacman:util-linux,brew:util-linux"
   "rain|ASCII rain in the terminal|rain|dnf:bsdgames,apt:bsdgames,pacman:bsdgames,brew:bsdgames"

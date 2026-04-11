@@ -55,7 +55,7 @@ FUN_TOOLS=(
   "moon-buggy|CLI arcade lunar buggy|moon-buggy|dnf:moon-buggy,apt:moon-buggy,pacman:moon-buggy,brew:moon-buggy"
   "nethack|Classic 1987 roguelike|nethack|dnf:nethack,apt:nethack-console,pacman:nethack,brew:nethack"
   "nudoku|Sudoku in the terminal|nudoku|dnf:nudoku,apt:nudoku,pacman:nudoku,brew:nudoku"
-  "2048-cli|The 2048 game in terminal|2048-cli|dnf:2048-cli,apt:2048,pacman:2048-cli,brew:2048"
+  "2048-cli|The 2048 game in terminal|2048|dnf:2048-cli,apt:2048,pacman:2048-cli,brew:2048"
   "termsaver|ASCII screensaver|termsaver|dnf:termsaver,apt:termsaver,pacman:termsaver,brew:termsaver"
   "rev|Reverse text line by line|echo 'termifun' | rev|dnf:util-linux,apt:util-linux,pacman:util-linux,brew:util-linux"
   "rain|ASCII rain in the terminal|rain|dnf:bsdgames,apt:bsdgames,pacman:bsdgames,brew:bsdgames"
@@ -157,15 +157,19 @@ _scan_tools() {
     local bin desc cmd hint
     IFS='|' read -r bin desc cmd hint <<< "$entry"
 
-    # Deduplicate binaries
+    # The real executable to check is the first word of the command
+    local real_bin
+    real_bin="${cmd%% *}"
+
+    # Deduplicate on the real binary
     local already=0
     for seen in "${_seen_bins[@]}"; do
-      [ "$seen" = "$bin" ] && already=1 && break
+      [ "$seen" = "$real_bin" ] && already=1 && break
     done
     [ "$already" = "1" ] && continue
-    _seen_bins+=("$bin")
+    _seen_bins+=("$real_bin")
 
-    if command -v "$bin" >/dev/null 2>&1; then
+    if command -v "$real_bin" >/dev/null 2>&1; then
       INSTALLED+=("$(printf '%-18s  %s' "$bin" "$desc")")
       INSTALLED_CMDS+=("$cmd")
     else
