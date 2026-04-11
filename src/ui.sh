@@ -1,0 +1,207 @@
+# ─────────────────────────────────────────
+# UI — Interactive menus and display functions
+# ─────────────────────────────────────────
+
+# ── FZF LAUNCHER — Installed tools ──────
+_fzf_launch() {
+  local count="${#INSTALLED[@]}"
+  if [ "$count" -eq 0 ]; then
+    printf '\n%sNo tools installed!%s \nSwitching to browse mode...\n' "$YELLOW" "$RESET"
+    sleep 1.5
+    NEXT_ACTION="browse"
+    return 0
+  fi
+
+  local header="${count} installed tools · Enter: run · Ctrl-b: browse · Ctrl-h: help · Esc: exit"
+
+  local output key selection
+  output=$(printf '%s\n' "${INSTALLED[@]}" | \
+    fzf \
+      --expect=ctrl-b,ctrl-h \
+      --prompt="⚡ termifun > " \
+      --header="$header" \
+      --header-first \
+      --height=70% \
+      --border=rounded \
+      --color='header:cyan,prompt:yellow,pointer:magenta,hl:green' \
+      --no-multi \
+      --exact
+  ) || return 0
+
+  [ -z "$output" ] && return 0
+
+  key=$(head -n1 <<< "$output")
+  selection=$(tail -n+2 <<< "$output")
+
+  if [ "$key" = "ctrl-b" ]; then
+    NEXT_ACTION="browse"
+    return
+  elif [ "$key" = "ctrl-h" ]; then
+    NEXT_ACTION="help_launch"
+    return
+  fi
+
+  [ -z "$selection" ] && return 0
+
+  local i=0
+  for line in "${INSTALLED[@]}"; do
+    if [ "$line" = "$selection" ]; then
+      local cmd="${INSTALLED_CMDS[$i]}"
+      printf '\n%s▶ Running:%s %s\n\n' "$BOLD" "$RESET" "$cmd"
+      sleep 0.3
+      eval "$cmd"
+      return
+    fi
+    i=$((i + 1))
+  done
+}
+
+# ── FZF BROWSER — Not installed tools ───
+_fzf_browse() {
+  local count="${#NOT_INSTALLED[@]}"
+  if [ "$count" -eq 0 ]; then
+    printf '\n%sYou have all tools installed!%s\n\n' "$GREEN" "$RESET"
+    sleep 2
+    NEXT_ACTION="launch"
+    return 0
+  fi
+
+  local header="${count} tools available to install · Enter: install · Ctrl-l: launch · Ctrl-h: help · Esc: exit"
+
+  local output key selection
+  output=$(printf '%s\n' "${NOT_INSTALLED[@]}" | \
+    fzf \
+      --expect=ctrl-l,ctrl-h \
+      --prompt="📦 install > " \
+      --header="$header" \
+      --header-first \
+      --height=70% \
+      --border=rounded \
+      --color='header:yellow,prompt:green,pointer:cyan,hl:yellow' \
+      --no-multi \
+      --exact
+  ) || return 0
+
+  [ -z "$output" ] && return 0
+
+  key=$(head -n1 <<< "$output")
+  selection=$(tail -n+2 <<< "$output")
+
+  if [ "$key" = "ctrl-l" ]; then
+    NEXT_ACTION="launch"
+    return
+  elif [ "$key" = "ctrl-h" ]; then
+    NEXT_ACTION="help_browse"
+    return
+  fi
+
+  [ -z "$selection" ] && return 0
+
+  local i=0
+  for line in "${NOT_INSTALLED[@]}"; do
+    if [ "$line" = "$selection" ]; then
+      local pkg="${NOT_INSTALLED_PKGS[$i]}"
+      local bin
+      bin=$(printf '%s' "$line" | awk '{print $1}')
+      if [ -z "$pkg" ]; then
+        printf '%sPackage not found for "%s" in %s.%s\n' "$RED" "$bin" "$PKG_MANAGER" "$RESET"
+        return 1
+      fi
+      printf '\n%s▶ Installing:%s %s%s%s  via %s%s%s\n\n' \
+        "$BOLD" "$RESET" "$GREEN" "$pkg" "$RESET" "$CYAN" "$PKG_MANAGER" "$RESET"
+      eval "$PKG_INSTALL $pkg"
+
+      printf '\n%sPress Enter to return to menu...%s' "$DIM" "$RESET"
+      read -r
+      _scan_tools
+      NEXT_ACTION="launch"
+      return
+    fi
+    i=$((i + 1))
+  done
+}
+
+# ── HELP SCREEN ──────────────────────────
+_show_fzf_help() {
+  local return_to="$1"
+
+  clear
+  printf '\n%s%s⚡ TERMIFUN HELP & KEYBINDS%s\n' "$BOLD" "$CYAN" "$RESET"
+  printf '──────────────────────────────────────────────\n\n'
+
+  printf '%sGENERAL NAVIGATION%s\n' "$BOLD" "$RESET"
+  printf '  %sUp/Down%s      Move selection up or down\n' "$GREEN" "$RESET"
+  printf '  %sEnter%s        Run (in Launch mode) or Install (in Browse mode)\n' "$GREEN" "$RESET"
+  printf '  %sEscape%s       Exit the menu\n\n' "$GREEN" "$RESET"
+
+  printf '%sQUICK SWITCHING%s\n' "$BOLD" "$RESET"
+  printf '  %sCtrl-b%s       Switch to Browse mode (find new tools to install)\n' "$YELLOW" "$RESET"
+  printf '  %sCtrl-l%s       Switch to Launch mode (run installed tools)\n\n' "$YELLOW" "$RESET"
+
+  printf '%sFEATURES%s\n' "$BOLD" "$RESET"
+  printf '  • Real-time fuzzy search by typing any part of the command or description.\n'
+  printf '  • Auto-detection of package manager (apt, dnf, pacman, brew).\n'
+  printf '  • Deduplication of commands.\n\n'
+
+  printf '%sPress Enter to return...%s' "$DIM" "$RESET"
+  read -r
+
+  NEXT_ACTION="$return_to"
+}
+
+# ── SIMPLE LIST (no fzf fallback) ────────
+_list_simple() {
+  printf '\n%s%s⚡ INSTALLED (%d)%s\n' "$BOLD" "$CYAN" "${#INSTALLED[@]}" "$RESET"
+  printf '  %s\n' "──────────────────────────────────────────────"
+  if [ "${#INSTALLED[@]}" -eq 0 ]; then
+    printf '  %sNone. Run termifun --browse to see what to install.%s\n' "$DIM" "$RESET"
+  else
+    local i=1
+    for line in "${INSTALLED[@]}"; do
+      printf '  %s%2d.%s %s\n' "$GREEN" "$i" "$RESET" "$line"
+      i=$((i + 1))
+    done
+  fi
+
+  printf '\n%s%s📦 NOT INSTALLED (%d)%s\n' "$BOLD" "$YELLOW" "${#NOT_INSTALLED[@]}" "$RESET"
+  printf '  %s\n' "──────────────────────────────────────────────"
+  local i=1
+  for j in "${!NOT_INSTALLED[@]}"; do
+    local pkg="${NOT_INSTALLED_PKGS[$j]}"
+    [ -z "$pkg" ] && pkg="(no package for $PKG_MANAGER)"
+    printf '  %s%2d. %-40s  %s install %s%s\n' \
+      "$DIM" "$i" "${NOT_INSTALLED[$j]}" "$PKG_MANAGER" "$pkg" "$RESET"
+    i=$((i + 1))
+  done
+
+  printf '\n  %sInstall fzf for interactive mode: %s install fzf%s\n\n' \
+    "$DIM" "$PKG_MANAGER" "$RESET"
+}
+
+# ── HELP TEXT ────────────────────────────
+_show_help() {
+  printf '
+%stermifun%s v%s — CLI Fun Tools Launcher
+
+%sUSAGE%s
+  termifun              Interactive launcher (requires fzf)
+  termifun --list       List all installed and not installed tools
+  termifun --browse     Browse and install not installed tools (requires fzf)
+  termifun --version    Show version
+  termifun --help       Show this help
+
+%sSUPPORTED SHELLS%s
+  bash, zsh, fish (and any POSIX sh)
+
+%sDETECTED MANAGER%s
+  %s%s%s
+
+%sREPOSITORY%s
+  https://github.com/P1ngu-Dev/termifun
+
+' "$BOLD" "$RESET" "$VERSION" \
+    "$BOLD" "$RESET" \
+    "$BOLD" "$RESET" \
+    "$BOLD" "$RESET" "$CYAN" "$PKG_MANAGER" "$RESET" \
+    "$BOLD" "$RESET"
+}
