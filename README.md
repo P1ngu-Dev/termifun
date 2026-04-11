@@ -1,4 +1,4 @@
-# termifun
+# termifun (BUILD IN PROGRESS, NOT READY YET)
 
 > Interactive launcher for fun CLI tools. Discover, launch, and install entertaining terminal utilities from a single command.
 
