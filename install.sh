@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # termifun installer
-# Quick usage: curl -fsSL https://raw.githubusercontent.com/tunombre/termifun/main/install.sh | sh
+# Quick usage: curl -fsSL https://raw.githubusercontent.com/P1ngu-Dev/termifun/main/install.sh | sh
 # With custom directory: FUN_INSTALL_DIR=~/.local/bin ./install.sh
 # Uninstall: ./install.sh uninstall
 

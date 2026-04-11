@@ -8,12 +8,12 @@
 
 ### Quick (recommended)
 ```sh
-curl -fsSL [https://raw.githubusercontent.com/tunombre/termifun/main/install.sh](https://raw.githubusercontent.com/tunombre/termifun/main/install.sh) | sh
+curl -fsSL [https://raw.githubusercontent.com/P1ngu-Dev/termifun/main/install.sh](https://raw.githubusercontent.com/P1ngu-Dev/termifun/main/install.sh) | sh
 ```
 
 ### Using wget
 ```sh
-wget -qO- [https://raw.githubusercontent.com/tunombre/termifun/main/install.sh](https://raw.githubusercontent.com/tunombre/termifun/main/install.sh) | sh
+wget -qO- [https://raw.githubusercontent.com/P1ngu-Dev/termifun/main/install.sh](https://raw.githubusercontent.com/P1ngu-Dev/termifun/main/install.sh) | sh
 ```
 
 ### Custom directory
@@ -23,7 +23,7 @@ FUN_INSTALL_DIR=~/.local/bin ./install.sh
 
 ### Manual
 ```sh
-git clone [https://github.com/tunombre/termifun](https://github.com/tunombre/termifun)
+git clone [https://github.com/P1ngu-Dev/termifun](https://github.com/P1ngu-Dev/termifun)
 cd termifun && ./install.sh
 ```
 
@@ -83,7 +83,7 @@ termifun --help     Show help message
 
 ## Dependencies
 
-- `fzf` — optional but highly recommended (`dnf install fzf`)
+- `fzf` — optional but highly recommended 
 
 ***
 
