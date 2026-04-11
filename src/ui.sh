@@ -145,12 +145,12 @@ _fzf_browse() {
 # ── FZF ONLINE — Online tool launcher ───
 _fzf_online() {
   local count="${#ONLINE_ITEMS[@]}"
-  local header="${count} online tools · Enter: run · Ctrl-l: launch · Ctrl-h: help · Esc: exit"
+  local header="${count} online tools · Enter: run · Ctrl-l: launch · Ctrl-b: browse · Ctrl-h: help · Esc: exit"
 
   local output key selection
   output=$(printf '%s\n' "${ONLINE_ITEMS[@]}" | \
     fzf \
-      --expect=ctrl-l,ctrl-h \
+      --expect=ctrl-b,ctrl-l,ctrl-h \
       --prompt="🌐 online > " \
       --header="$header" \
       --header-first \
@@ -166,7 +166,10 @@ _fzf_online() {
   key=$(head -n1 <<< "$output")
   selection=$(tail -n+2 <<< "$output")
 
-  if [ "$key" = "ctrl-l" ]; then
+  if [ "$key" = "ctrl-b" ]; then
+    NEXT_ACTION="browse"
+    return
+  elif [ "$key" = "ctrl-l" ]; then
     NEXT_ACTION="launch"
     return
   elif [ "$key" = "ctrl-h" ]; then
