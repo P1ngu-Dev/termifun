@@ -106,18 +106,36 @@ _fzf_browse() {
       local pkg="${NOT_INSTALLED_PKGS[$i]}"
       local bin
       bin=$(printf '%s' "$line" | awk '{print $1}')
-      if [ -z "$pkg" ]; then
-        printf '%sPackage not found for "%s" in %s.%s\n' "$RED" "$bin" "$PKG_MANAGER" "$RESET"
-        return 1
+      if [ -z "$pkg" ] || [ "$pkg" = "-" ]; then
+        printf '\n%sPackage not found or cannot be installed automatically for "%s" via %s.%s\n' "$RED" "$bin" "$PKG_MANAGER" "$RESET"
+        printf '\n%sPress Enter to return to menu...%s' "$DIM" "$RESET"
+        read -r
+        NEXT_ACTION="browse"
+        return
       fi
-      printf '\n%s▶ Installing:%s %s%s%s  via %s%s%s\n\n' \
-        "$BOLD" "$RESET" "$GREEN" "$pkg" "$RESET" "$CYAN" "$PKG_MANAGER" "$RESET"
-      eval "$PKG_INSTALL $pkg"
+      printf 'Install %s%s%s via %s%s%s? [y/N] ' "$GREEN" "$pkg" "$RESET" "$CYAN" "$PKG_MANAGER" "$RESET"
+      local answer
+      read -r answer
+      case "$answer" in
+        [yY]|[yY][eE][sS])
+          printf '\n%s▶ Installing:%s %s%s%s  via %s%s%s\n\n' \
+            "$BOLD" "$RESET" "$GREEN" "$pkg" "$RESET" "$CYAN" "$PKG_MANAGER" "$RESET"
+          eval "$PKG_INSTALL $pkg"
+          ;;
+        *)
+          printf '\n%sSkipping. Press Enter to return...%s' "$DIM" "$RESET"
+          read -r
+          NEXT_ACTION="browse"
+          return
+          ;;
+      esac
+
+      hash -r 2>/dev/null || true
+      _scan_tools
 
       printf '\n%sPress Enter to return to menu...%s' "$DIM" "$RESET"
       read -r
-      _scan_tools
-      NEXT_ACTION="launch"
+      NEXT_ACTION="browse"
       return
     fi
     i=$((i + 1))
@@ -195,6 +213,7 @@ _fzf_online() {
             ;;
         esac
         # Re-check after attempted install
+        hash -r 2>/dev/null || true
         if ! command -v "$req" >/dev/null 2>&1; then
           printf '\n%sInstallation may have failed. Please check manually.%s\n' "$RED" "$RESET"
           printf '%sPress Enter to return...%s' "$DIM" "$RESET"
