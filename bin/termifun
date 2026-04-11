@@ -1,0 +1,330 @@
+#!/usr/bin/env bash
+# termifun - CLI Fun Tools Launcher
+# https://github.com/tunombre/termifun
+# License: MIT
+
+VERSION="0.1.0"
+
+# ─────────────────────────────────────────────────────────────
+# TOOLS: "binary|description|command_to_run|pkg:dnf,apt,pacman"
+# ─────────────────────────────────────────────────────────────
+FUN_TOOLS=(
+  "nyancat|Animated Nyan cat in the terminal|nyancat|dnf:nyancat,apt:nyancat,pacman:nyancat,brew:nyancat"
+  "cmatrix|Matrix effect in the terminal|cmatrix -ab|dnf:cmatrix,apt:cmatrix,pacman:cmatrix,brew:cmatrix"
+  "cbonsai|Bonsai tree that grows on its own|cbonsai -l|dnf:cbonsai,apt:cbonsai,pacman:cbonsai,brew:cbonsai"
+  "lolcat|Colorize output in rainbow|echo 'Hello from termifun' | lolcat|dnf:lolcat,apt:lolcat,pacman:lolcat,brew:lolcat"
+  "cowsay|A talking cow|cowsay 'Moo!'|dnf:cowsay,apt:cowsay,pacman:cowsay,brew:cowsay"
+  "ponysay|Like cowsay but with ponies|ponysay 'Yay!'|dnf:ponysay,apt:ponysay,pacman:ponysay-git,brew:ponysay"
+  "fortune|Random quote from the oracle|fortune|dnf:fortune-mod,apt:fortune-mod,pacman:fortune-mod,brew:fortune"
+  "figlet|Large text ASCII art|figlet 'termifun'|dnf:figlet,apt:figlet,pacman:figlet,brew:figlet"
+  "toilet|figlet with colors and styles|toilet -f future --gay 'termifun'|dnf:toilet,apt:toilet,pacman:toilet,brew:toilet"
+  "sl|Train when you type ls wrong|sl|dnf:sl,apt:sl,pacman:sl,brew:sl"
+  "asciiquarium|Animated ASCII aquarium|asciiquarium|dnf:asciiquarium,apt:asciiquarium,pacman:asciiquarium,brew:asciiquarium"
+  "aafire|Animated ASCII fire|aafire -driver stdout|dnf:aalib,apt:aalib-bin,pacman:aalib,brew:aalib"
+  "cacafire|Colorful fire with libcaca|cacafire|dnf:libcaca,apt:caca-utils,pacman:libcaca,brew:libcaca"
+  "nms|Sneakers decryption effect|echo 'termifun rocks!' | nms -a|dnf:no-more-secrets,apt:no-more-secrets,pacman:no-more-secrets,brew:no-more-secrets"
+  "pipes.sh|Animated pipes in the terminal|pipes.sh|dnf:pipes-sh,apt:pipes-sh,pacman:pipes.sh,brew:pipes-sh"
+  "unimatrix|Matrix with Unicode characters|unimatrix -n -s 96|dnf:unimatrix,apt:unimatrix,pacman:unimatrix-git,brew:unimatrix"
+  "genact|Generate fake hacker activity|genact|dnf:genact,apt:genact,pacman:genact,brew:genact"
+  "hollywood|Hacker terminal to the max|hollywood|dnf:hollywood,apt:hollywood,pacman:hollywood,brew:hollywood"
+  "tty-clock|Large clock in the terminal|tty-clock -c -C 6 -s|dnf:tty-clock,apt:tty-clock,pacman:tty-clock,brew:tty-clock"
+  "bb|ASCII art demo|bb|dnf:bb,apt:bb,pacman:bb,brew:bb"
+  "bastet|Tetris that hates you|bastet|dnf:bastet,apt:bastet,pacman:bastet,brew:bastet"
+  "ninvaders|Space Invaders in terminal|ninvaders|dnf:ninvaders,apt:ninvaders,pacman:ninvaders,brew:ninvaders"
+  "moon-buggy|CLI arcade lunar buggy|moon-buggy|dnf:moon-buggy,apt:moon-buggy,pacman:moon-buggy,brew:moon-buggy"
+  "nethack|Classic 1987 roguelike|nethack|dnf:nethack,apt:nethack-console,pacman:nethack,brew:nethack"
+  "greed|ASCII game of greed|greed|dnf:greed,apt:greed,pacman:greed,brew:greed"
+  "nudoku|Sudoku in the terminal|nudoku|dnf:nudoku,apt:nudoku,pacman:nudoku,brew:nudoku"
+  "2048-cli|The 2048 game in terminal|2048-cli|dnf:2048-cli,apt:2048,pacman:2048-cli,brew:2048"
+  "termsaver|ASCII screensaver|termsaver|dnf:termsaver,apt:termsaver,pacman:termsaver,brew:termsaver"
+  "pv|Visual pipe progress|echo 'Loading...' | pv -qL 30|dnf:pv,apt:pv,pacman:pv,brew:pv"
+  "espeak|Text to speech in terminal|espeak 'Hello from termifun'|dnf:espeak,apt:espeak,pacman:espeak,brew:espeak"
+  "factor|Visual mathematical factorization|factor 1337|dnf:coreutils,apt:coreutils,pacman:coreutils,brew:coreutils"
+  "rev|Reverse text line by line|echo 'termifun' | rev|dnf:util-linux,apt:util-linux,pacman:util-linux,brew:util-linux"
+  "rain|ASCII rain in the terminal|rain|dnf:bsdgames,apt:bsdgames,pacman:bsdgames,brew:bsdgames"
+  "banner|Large UNIX style banner|banner 'FUN'|dnf:util-linux,apt:sysvbanner,pacman:bsdgames,brew:bsdgames"
+)
+
+# ─────────────────────────────────────────
+# COLORS
+# ─────────────────────────────────────────
+_setup_colors() {
+  if [ -t 1 ] && command -v tput >/dev/null 2>&1 && [ "$(tput colors 2>/dev/null)" -ge 8 ] 2>/dev/null; then
+    BOLD=$(tput bold)
+    DIM=$(tput dim 2>/dev/null || printf '')
+    RED=$(tput setaf 1)
+    GREEN=$(tput setaf 2)
+    YELLOW=$(tput setaf 3)
+    CYAN=$(tput setaf 6)
+    RESET=$(tput sgr0)
+  else
+    BOLD='' DIM='' RED='' GREEN='' YELLOW='' CYAN='' RESET=''
+  fi
+}
+
+# ─────────────────────────────────────────
+# DETECT PACKAGE MANAGER
+# ─────────────────────────────────────────
+_detect_pkg_manager() {
+  if command -v dnf >/dev/null 2>&1; then
+    PKG_MANAGER="dnf"; PKG_INSTALL="sudo dnf install -y"
+  elif command -v pacman >/dev/null 2>&1; then
+    PKG_MANAGER="pacman"; PKG_INSTALL="sudo pacman -S --noconfirm"
+  elif command -v apt >/dev/null 2>&1; then
+    PKG_MANAGER="apt"; PKG_INSTALL="sudo apt install -y"
+  elif command -v brew >/dev/null 2>&1; then
+    PKG_MANAGER="brew"; PKG_INSTALL="brew install"
+  else
+    PKG_MANAGER="unknown"; PKG_INSTALL=""
+  fi
+}
+
+# ─────────────────────────────────────────
+# GET PACKAGE NAME FOR CURRENT PKG MANAGER
+# ─────────────────────────────────────────
+_get_pkg_name() {
+  local hint="$1" pkg=""
+  local IFS=','
+  for pair in $hint; do
+    local mgr="${pair%%:*}"
+    local name="${pair#*:}"
+    if [ "$mgr" = "$PKG_MANAGER" ]; then
+      pkg="$name"
+      break
+    fi
+  done
+  printf '%s' "$pkg"
+}
+
+# ─────────────────────────────────────────
+# SCAN INSTALLED AND NOT INSTALLED TOOLS
+# ─────────────────────────────────────────
+_scan_tools() {
+  INSTALLED=()
+  INSTALLED_CMDS=()
+  NOT_INSTALLED=()
+  NOT_INSTALLED_CMDS=()
+  NOT_INSTALLED_PKGS=()
+  _seen_bins=()
+
+  for entry in "${FUN_TOOLS[@]}"; do
+    local bin desc cmd hint
+    IFS='|' read -r bin desc cmd hint <<< "$entry"
+
+    # Deduplicate binaries
+    local already=0
+    for seen in "${_seen_bins[@]}"; do
+      [ "$seen" = "$bin" ] && already=1 && break
+    done
+    [ "$already" = "1" ] && continue
+    _seen_bins+=("$bin")
+
+    if command -v "$bin" >/dev/null 2>&1; then
+      INSTALLED+=("$(printf '%-18s  %s' "$bin" "$desc")")
+      INSTALLED_CMDS+=("$cmd")
+    else
+      local pkg
+      pkg=$(_get_pkg_name "$hint")
+      NOT_INSTALLED+=("$(printf '%-18s  %s' "$bin" "$desc")")
+      NOT_INSTALLED_CMDS+=("$cmd")
+      NOT_INSTALLED_PKGS+=("$pkg")
+    fi
+  done
+}
+
+# ─────────────────────────────────────────
+# FZF LAUNCHER — INSTALLED TOOLS
+# ─────────────────────────────────────────
+_fzf_launch() {
+  local count="${#INSTALLED[@]}"
+  local header="${count} installed tools · Enter to run · Esc to exit"
+
+  local selection
+  selection=$(printf '%s\n' "${INSTALLED[@]}" | \
+    fzf \
+      --prompt="⚡ termifun > " \
+      --header="$header" \
+      --header-first \
+      --height=70% \
+      --border=rounded \
+      --color='header:cyan,prompt:yellow,pointer:magenta,hl:green' \
+      --no-multi \
+      --exact
+  ) || return 0
+
+  [ -z "$selection" ] && return 0
+
+  local i=0
+  for line in "${INSTALLED[@]}"; do
+    if [ "$line" = "$selection" ]; then
+      local cmd="${INSTALLED_CMDS[$i]}"
+      printf '\n%s▶ Running:%s %s\n\n' "$BOLD" "$RESET" "$cmd"
+      sleep 0.3
+      eval "$cmd"
+      return
+    fi
+    i=$((i + 1))
+  done
+}
+
+# ─────────────────────────────────────────
+# FZF BROWSER — NOT INSTALLED TOOLS
+# ─────────────────────────────────────────
+_fzf_browse() {
+  local count="${#NOT_INSTALLED[@]}"
+  [ "$count" -eq 0 ] && printf '\n%sYou have all tools installed!%s\n\n' "$GREEN" "$RESET" && return 0
+
+  local header="${count} tools available to install · Enter to install · Esc to exit"
+
+  local selection
+  selection=$(printf '%s\n' "${NOT_INSTALLED[@]}" | \
+    fzf \
+      --prompt="📦 install > " \
+      --header="$header" \
+      --header-first \
+      --height=70% \
+      --border=rounded \
+      --color='header:yellow,prompt:green,pointer:cyan,hl:yellow' \
+      --no-multi \
+      --exact
+  ) || return 0
+
+  [ -z "$selection" ] && return 0
+
+  local i=0
+  for line in "${NOT_INSTALLED[@]}"; do
+    if [ "$line" = "$selection" ]; then
+      local pkg="${NOT_INSTALLED_PKGS[$i]}"
+      local bin
+      bin=$(printf '%s' "$line" | awk '{print $1}')
+      if [ -z "$pkg" ]; then
+        printf '%sPackage not found for "%s" in %s.%s\n' "$RED" "$bin" "$PKG_MANAGER" "$RESET"
+        return 1
+      fi
+      printf '\n%s▶ Installing:%s %s%s%s  via %s%s%s\n\n' \
+        "$BOLD" "$RESET" "$GREEN" "$pkg" "$RESET" "$CYAN" "$PKG_MANAGER" "$RESET"
+      eval "$PKG_INSTALL $pkg"
+      return
+    fi
+    i=$((i + 1))
+  done
+}
+
+# ─────────────────────────────────────────
+# SIMPLE LIST — WITHOUT FZF
+# ─────────────────────────────────────────
+_list_simple() {
+  printf '\n%s%s⚡ INSTALLED (%d)%s\n' "$BOLD" "$CYAN" "${#INSTALLED[@]}" "$RESET"
+  printf '  %s\n' "──────────────────────────────────────────────"
+  if [ "${#INSTALLED[@]}" -eq 0 ]; then
+    printf '  %sNone. Run termifun --browse to see what to install.%s\n' "$DIM" "$RESET"
+  else
+    local i=1
+    for line in "${INSTALLED[@]}"; do
+      printf '  %s%2d.%s %s\n' "$GREEN" "$i" "$RESET" "$line"
+      i=$((i + 1))
+    done
+  fi
+
+  printf '\n%s%s📦 NOT INSTALLED (%d)%s\n' "$BOLD" "$YELLOW" "${#NOT_INSTALLED[@]}" "$RESET"
+  printf '  %s\n' "──────────────────────────────────────────────"
+  local i=1
+  for j in "${!NOT_INSTALLED[@]}"; do
+    local pkg="${NOT_INSTALLED_PKGS[$j]}"
+    [ -z "$pkg" ] && pkg="(no package for $PKG_MANAGER)"
+    printf '  %s%2d. %-40s  %s install %s%s\n' \
+      "$DIM" "$i" "${NOT_INSTALLED[$j]}" "$PKG_MANAGER" "$pkg" "$RESET"
+    i=$((i + 1))
+  done
+
+  printf '\n  %sInstall fzf for interactive mode: %s install fzf%s\n\n' \
+    "$DIM" "$PKG_MANAGER" "$RESET"
+}
+
+# ─────────────────────────────────────────
+# HELP
+# ─────────────────────────────────────────
+_show_help() {
+  printf '
+%stermifun%s v%s — CLI Fun Tools Launcher
+
+%sUSAGE%s
+  termifun              Interactive launcher (requires fzf)
+  termifun --list       List all installed and not installed tools
+  termifun --browse     Browse and install not installed tools (requires fzf)
+  termifun --version    Show version
+  termifun --help       Show this help
+
+%sSUPPORTED SHELLS%s
+  bash, zsh, fish (and any POSIX sh)
+
+%sDETECTED MANAGER%s
+  %s%s%s
+
+%sREPOSITORY%s
+  https://github.com/tunombre/termifun
+
+' "$BOLD" "$RESET" "$VERSION" \
+    "$BOLD" "$RESET" \
+    "$BOLD" "$RESET" \
+    "$BOLD" "$RESET" "$CYAN" "$PKG_MANAGER" "$RESET" \
+    "$BOLD" "$RESET"
+}
+
+# ─────────────────────────────────────────
+# MAIN
+# ─────────────────────────────────────────
+main() {
+  _setup_colors
+  _detect_pkg_manager
+  _scan_tools
+
+  case "${1:-}" in
+    --help|-h)
+      _show_help
+      ;;
+    --version|-v)
+      printf 'termifun v%s\n' "$VERSION"
+      ;;
+    --list|-l)
+      _list_simple
+      ;;
+    --browse|-b)
+      if command -v fzf >/dev/null 2>&1; then
+        _fzf_browse
+      else
+        # Fallback without fzf: list with installation commands
+        printf '\n%s%s📦 NOT INSTALLED TOOLS%s\n' "$BOLD" "$YELLOW" "$RESET"
+        printf '  %s\n' "──────────────────────────────────────────────"
+        local i=0
+        for line in "${NOT_INSTALLED[@]}"; do
+          local pkg="${NOT_INSTALLED_PKGS[$i]}"
+          [ -z "$pkg" ] && pkg="(no package for $PKG_MANAGER)"
+          printf '  %s%-40s%s  %s%s install %s%s\n' \
+            "$DIM" "$line" "$RESET" "$CYAN" "$PKG_MANAGER" "$pkg" "$RESET"
+          i=$((i + 1))
+        done
+        printf '\n'
+      fi
+      ;;
+    "")
+      if [ "${#INSTALLED[@]}" -eq 0 ]; then
+        printf '\n%sNo fun tools installed found.%s\n' "$YELLOW" "$RESET"
+        printf 'Run %stermifun --browse%s to see what you can install.\n\n' "$CYAN" "$RESET"
+        exit 0
+      fi
+      if command -v fzf >/dev/null 2>&1; then
+        _fzf_launch
+      else
+        _list_simple
+      fi
+      ;;
+    *)
+      printf '%sUnknown option: %s%s\n' "$RED" "$1" "$RESET"
+      printf "Use 'termifun --help' to see options.\n"
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
