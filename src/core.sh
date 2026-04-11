@@ -53,7 +53,8 @@ _scan_tools() {
   NOT_INSTALLED_PKGS=()
   _seen_bins=()
 
-  for entry in "${FUN_TOOLS[@]}"; do
+  while IFS= read -r entry; do
+    [ -z "$entry" ] && continue
     local bin desc cmd hint
     IFS='|' read -r bin desc cmd hint <<< "$entry"
 
@@ -75,5 +76,5 @@ _scan_tools() {
       NOT_INSTALLED_CMDS+=("$cmd")
       NOT_INSTALLED_PKGS+=("$pkg")
     fi
-  done
+  done < <(printf '%s\n' "${FUN_TOOLS[@]}" | sort -f)
 }
