@@ -12,12 +12,12 @@ _fzf_launch() {
     return 0
   fi
 
-  local header="${count} installed tools · Enter: run · Ctrl-b: browse · Ctrl-h: help · Esc: exit"
+  local header="${count} installed tools · Enter: run · Ctrl-b: browse · Ctrl-o: online · Ctrl-h: help · Esc: exit"
 
   local output key selection
   output=$(printf '%s\n' "${INSTALLED[@]}" | \
     fzf \
-      --expect=ctrl-b,ctrl-h \
+      --expect=ctrl-b,ctrl-o,ctrl-h \
       --prompt="⚡ termifun > " \
       --header="$header" \
       --header-first \
@@ -35,6 +35,9 @@ _fzf_launch() {
 
   if [ "$key" = "ctrl-b" ]; then
     NEXT_ACTION="browse"
+    return
+  elif [ "$key" = "ctrl-o" ]; then
+    NEXT_ACTION="online"
     return
   elif [ "$key" = "ctrl-h" ]; then
     NEXT_ACTION="help_launch"
@@ -121,6 +124,98 @@ _fzf_browse() {
   done
 }
 
+# ── FZF ONLINE — Online tool launcher ───
+_fzf_online() {
+  local count="${#ONLINE_ITEMS[@]}"
+  local header="${count} online tools · Enter: run · Ctrl-l: launch · Ctrl-h: help · Esc: exit"
+
+  local output key selection
+  output=$(printf '%s\n' "${ONLINE_ITEMS[@]}" | \
+    fzf \
+      --expect=ctrl-l,ctrl-h \
+      --prompt="🌐 online > " \
+      --header="$header" \
+      --header-first \
+      --height=70% \
+      --border=rounded \
+      --color='header:blue,prompt:cyan,pointer:green,hl:blue' \
+      --no-multi \
+      --exact
+  ) || return 0
+
+  [ -z "$output" ] && return 0
+
+  key=$(head -n1 <<< "$output")
+  selection=$(tail -n+2 <<< "$output")
+
+  if [ "$key" = "ctrl-l" ]; then
+    NEXT_ACTION="launch"
+    return
+  elif [ "$key" = "ctrl-h" ]; then
+    NEXT_ACTION="help_online"
+    return
+  fi
+
+  [ -z "$selection" ] && return 0
+
+  local i=0
+  for line in "${ONLINE_ITEMS[@]}"; do
+    if [ "$line" = "$selection" ]; then
+      local cmd="${ONLINE_CMDS[$i]}"
+      local req="${ONLINE_REQBINS[$i]}"
+      local pkg="${ONLINE_PKGS[$i]}"
+
+      # Check if required binary is available
+      if ! command -v "$req" >/dev/null 2>&1; then
+        printf '\n%s⚠ Required tool not found:%s %s%s%s\n' "$YELLOW" "$RESET" "$BOLD" "$req" "$RESET"
+        if [ -z "$pkg" ] || [ "$pkg" = "-" ]; then
+          printf '%sCannot install automatically for %s. Please install %s manually.%s\n\n' \
+            "$RED" "$PKG_MANAGER" "$req" "$RESET"
+          printf '%sPress Enter to return to menu...%s' "$DIM" "$RESET"
+          read -r
+          NEXT_ACTION="online"
+          return
+        fi
+        printf 'Install %s%s%s via %s%s%s? [y/N] ' "$GREEN" "$pkg" "$RESET" "$CYAN" "$PKG_MANAGER" "$RESET"
+        local answer
+        read -r answer
+        case "$answer" in
+          [yY]|[yY][eE][sS])
+            printf '\n%s▶ Installing:%s %s%s%s  via %s%s%s\n\n' \
+              "$BOLD" "$RESET" "$GREEN" "$pkg" "$RESET" "$CYAN" "$PKG_MANAGER" "$RESET"
+            eval "$PKG_INSTALL $pkg"
+            printf '\n%sPress Enter to continue...%s' "$DIM" "$RESET"
+            read -r
+            ;;
+          *)
+            printf '\n%sSkipping. Press Enter to return...%s' "$DIM" "$RESET"
+            read -r
+            NEXT_ACTION="online"
+            return
+            ;;
+        esac
+        # Re-check after attempted install
+        if ! command -v "$req" >/dev/null 2>&1; then
+          printf '\n%sInstallation may have failed. Please check manually.%s\n' "$RED" "$RESET"
+          printf '%sPress Enter to return...%s' "$DIM" "$RESET"
+          read -r
+          NEXT_ACTION="online"
+          return
+        fi
+      fi
+
+      printf '\n%s▶ Running:%s %s\n\n' "$BOLD" "$RESET" "$cmd"
+      sleep 0.3
+      eval "$cmd"
+      printf '\n%sPress Enter to return to menu...%s' "$DIM" "$RESET"
+      read -r
+      NEXT_ACTION="online"
+      return
+    fi
+    i=$((i + 1))
+  done
+}
+
 # ── HELP SCREEN ──────────────────────────
 _show_fzf_help() {
   local return_to="$1"
@@ -131,17 +226,19 @@ _show_fzf_help() {
 
   printf '%sGENERAL NAVIGATION%s\n' "$BOLD" "$RESET"
   printf '  %sUp/Down%s      Move selection up or down\n' "$GREEN" "$RESET"
-  printf '  %sEnter%s        Run (in Launch mode) or Install (in Browse mode)\n' "$GREEN" "$RESET"
+  printf '  %sEnter%s        Run (Launch/Online) or Install (Browse)\n' "$GREEN" "$RESET"
   printf '  %sEscape%s       Exit the menu\n\n' "$GREEN" "$RESET"
 
   printf '%sQUICK SWITCHING%s\n' "$BOLD" "$RESET"
-  printf '  %sCtrl-b%s       Switch to Browse mode (find new tools to install)\n' "$YELLOW" "$RESET"
-  printf '  %sCtrl-l%s       Switch to Launch mode (run installed tools)\n\n' "$YELLOW" "$RESET"
+  printf '  %sCtrl-b%s       Switch to Browse mode (install new tools)\n' "$YELLOW" "$RESET"
+  printf '  %sCtrl-l%s       Switch to Launch mode (run installed tools)\n' "$YELLOW" "$RESET"
+  printf '  %sCtrl-o%s       Switch to Online mode (run online tools)\n\n' "$YELLOW" "$RESET"
 
   printf '%sFEATURES%s\n' "$BOLD" "$RESET"
-  printf '  • Real-time fuzzy search by typing any part of the command or description.\n'
+  printf '  • Real-time fuzzy search by name or description.\n'
   printf '  • Auto-detection of package manager (apt, dnf, pacman, brew).\n'
-  printf '  • Deduplication of commands.\n\n'
+  printf '  • Online tools: auto-detect and offer to install required binaries.\n'
+  printf '  • Deduplication of tool entries.\n\n'
 
   printf '%sPress Enter to return...%s' "$DIM" "$RESET"
   read -r

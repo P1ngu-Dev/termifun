@@ -78,3 +78,27 @@ _scan_tools() {
     fi
   done < <(printf '%s\n' "${FUN_TOOLS[@]}" | sort -f)
 }
+
+_scan_online_tools() {
+  ONLINE_ITEMS=()
+  ONLINE_CMDS=()
+  ONLINE_REQBINS=()
+  ONLINE_PKGS=()
+
+  for entry in "${ONLINE_TOOLS[@]}"; do
+    # Skip comment lines (entries starting with #)
+    [[ "$entry" =~ ^# ]] && continue
+    [ -z "$entry" ] && continue
+
+    local name desc cmd req hint
+    IFS='|' read -r name desc cmd req hint <<< "$entry"
+
+    local pkg
+    pkg=$(_get_pkg_name "$hint")
+
+    ONLINE_ITEMS+=("$(printf '%-20s  %s' "$name" "$desc")")
+    ONLINE_CMDS+=("$cmd")
+    ONLINE_REQBINS+=("$req")
+    ONLINE_PKGS+=("$pkg")
+  done
+}

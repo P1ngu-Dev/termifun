@@ -1,11 +1,19 @@
 # ─────────────────────────────────────────────────────────────
 # DATA — Version and tool definitions
 # Edit this file to add, remove, or update tools.
-# Format: "binary|description|command_to_run|pkg:mgr,pkg:mgr,..."
+#
+# FUN_TOOLS format:
+#   "binary|description|command_to_run|pkg:mgr,..."
+#
+# ONLINE_TOOLS format:
+#   "name|description|command|required_bin|pkg:mgr,..."
+#   • name         — display label (no spaces, used as ID)
+#   • required_bin — the binary that must exist to run the command
 # ─────────────────────────────────────────────────────────────
 
 VERSION="0.1.0"
 
+# ── Local / installable tools ─────────────────────────────────
 FUN_TOOLS=(
   "nyancat|Animated Nyan cat in the terminal|nyancat|dnf:nyancat,apt:nyancat,pacman:nyancat,brew:nyancat"
   "cmatrix|Matrix effect in the terminal|cmatrix|dnf:cmatrix,apt:cmatrix,pacman:cmatrix,brew:cmatrix"
@@ -19,6 +27,7 @@ FUN_TOOLS=(
   "sl|Train when you type ls wrong|sl|dnf:sl,apt:sl,pacman:sl,brew:sl"
   "asciiquarium|Animated ASCII aquarium|asciiquarium|dnf:asciiquarium,apt:asciiquarium,pacman:asciiquarium,brew:asciiquarium"
   "aafire|Animated ASCII fire|aafire -driver stdout|dnf:aalib,apt:aalib-bin,pacman:aalib,brew:aalib"
+  "cacafire|Colorful fire with libcaca|cacafire|dnf:libcaca,apt:caca-utils,pacman:libcaca,brew:libcaca"
   "pipes.sh|Animated pipes in the terminal|pipes.sh|dnf:pipes-sh,apt:pipes-sh,pacman:pipes.sh,brew:pipes-sh"
   "unimatrix|Matrix with Unicode characters|unimatrix -n -s 96|dnf:unimatrix,apt:unimatrix,pacman:unimatrix-git,brew:unimatrix"
   "genact|Generate fake hacker activity|genact|dnf:genact,apt:genact,pacman:genact,brew:genact"
@@ -38,29 +47,32 @@ FUN_TOOLS=(
   "charasay|Modern cowsay with ANSI art (Rust)|chara say 'termifun'|dnf:-,apt:-,pacman:charasay,brew:-"
   "lavat|Lava lamp simulation in terminal|lavat|dnf:-,apt:-,pacman:lavat-git,brew:-"
   "terminal-parrot|Animated party parrot offline|terminal-parrot|dnf:-,apt:-,pacman:terminal-parrot,brew:-"
-  "mapscii|ASCII maps|mapscii|dnf:mapscii,apt:mapscii,pacman:mapscii,brew:mapscii"
-  "snowmachine|Snow in the terminal|snowmachine|dnf:snowmachine,apt:snowmachine,pacman:snowmachine,brew:snowmachine"
+  "mapscii|ASCII world map in the terminal|mapscii|dnf:mapscii,apt:mapscii,pacman:mapscii,brew:mapscii"
+  "snowmachine|Snow falling in the terminal|snowmachine|dnf:snowmachine,apt:snowmachine,pacman:snowmachine,brew:snowmachine"
   "neofetch|System info with ASCII logo|neofetch|dnf:neofetch,apt:neofetch,pacman:neofetch,brew:neofetch"
-  "tmatrix|Matrix effect in the terminal|tmatrix|dnf:tmatrix,apt:tmatrix,pacman:tmatrix,brew:tmatrix"
-  "oneko|Animated cat walking on your terminal|oneko|dnf:oneko,apt:oneko,pacman:oneko,brew:oneko"
-  "fastfetch|Like neofetch but faster|fastfetch|dnf:fastfetch,apt:fastfetch,pacman:fastfetch,brew:fastfetch"
+  "tmatrix|Matrix text effect (C rewrite)|tmatrix|dnf:tmatrix,apt:tmatrix,pacman:tmatrix,brew:tmatrix"
+  "oneko|Animated cat following your cursor|oneko|dnf:oneko,apt:oneko,pacman:oneko,brew:oneko"
+  "fastfetch|System info tool (neofetch successor)|fastfetch|dnf:fastfetch,apt:fastfetch,pacman:fastfetch,brew:fastfetch"
   "ani-cli|Watch anime in the terminal|ani-cli|dnf:ani-cli,apt:ani-cli,pacman:ani-cli,brew:ani-cli"
-  "cacafire|Colorful fire with libcaca|cacafire|dnf:libcaca,apt:caca-utils,pacman:libcaca,brew:libcaca"
-  "no-more-secrets|A command line tool that recreates the famous data decryption effect seen in the 1992 movie Sneakers. |nms -a|dnf:no-more-secrets,apt:no-more-secrets,pacman:no-more-secrets,brew:no-more-secrets"
+  "no-more-secrets|Sneakers movie decryption effect|nms|dnf:no-more-secrets,apt:no-more-secrets,pacman:no-more-secrets,brew:no-more-secrets"
+)
 
-  # Online tools
-  "curl|Party parrot animated (online)|curl parrot.live|dnf:curl,apt:curl,pacman:curl,brew:curl"
-  "telnet|Star Wars Episode IV in ASCII (online)|telnet towel.blinkenlights.nl|dnf:telnet,apt:telnet,pacman:inetutils,brew:telnet"
-  "curl wttr.in|Weather in the terminal|curl wttr.in|dnf:curl,apt:curl,pacman:curl,brew:curl"
-  "curl ascii.live/nyan|Nyan cat via curl (online)|curl ascii.live/nyan|dnf:curl,apt:curl,pacman:curl,brew:curl"
-  "curl ascii.live/donut|Spinning donut animation (online)|curl ascii.live/donut|dnf:curl,apt:curl,pacman:curl,brew:curl"
-  "curl ascii.live/rick|Rickroll in ASCII (online)|curl ascii.live/rick|dnf:curl,apt:curl,pacman:curl,brew:curl"
-  "curl ascii.live/forrest|Run Forrest run! (online)|curl ascii.live/forrest|dnf:curl,apt:curl,pacman:curl,brew:curl"
-  "curl ascii.live/batman|Batman animation (online)|curl ascii.live/batman|dnf:curl,apt:curl,pacman:curl,brew:curl"
-  "curl ascii.live/dvd|DVD logo bouncing (online)|curl ascii.live/dvd|dnf:curl,apt:curl,pacman:curl,brew:curl"
-  "curl ascii.live/coin|Spinning coin (online)|curl ascii.live/coin|dnf:curl,apt:curl,pacman:curl,brew:curl"
-  "curl ascii.live/knot|Animated knot (online)|curl ascii.live/knot|dnf:curl,apt:curl,pacman:curl,brew:curl"
-  "curl ascii.live/spidyswing|Spider-Man swinging (online)|curl ascii.live/spidyswing|dnf:curl,apt:curl,pacman:curl,brew:curl"
-  "curl ascii.live/playstation|PlayStation intro (online)|curl ascii.live/playstation|dnf:curl,apt:curl,pacman:curl,brew:curl"
-
+# ── Online tools ──────────────────────────────────────────────
+# Format: "name|description|command|required_bin|pkg:mgr,..."
+ONLINE_TOOLS=(
+  # ── curl-based ───────────────────────────────────────────────
+  "parrot|Party parrot animated|curl parrot.live|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  "wttr|Weather forecast in the terminal|curl wttr.in|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  "nyan-online|Nyan Cat animation|curl ascii.live/nyan|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  "donut|Spinning donut animation|curl ascii.live/donut|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  "rick|Rickroll in ASCII art|curl ascii.live/rick|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  "forrest|Run Forrest run!|curl ascii.live/forrest|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  "batman|Batman animation|curl ascii.live/batman|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  "dvd|Bouncing DVD logo|curl ascii.live/dvd|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  "coin|Spinning coin animation|curl ascii.live/coin|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  "knot|Animated ASCII knot|curl ascii.live/knot|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  "spiderman|Spider-Man swinging|curl ascii.live/spidyswing|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  "playstation|PlayStation intro sequence|curl ascii.live/playstation|curl|dnf:curl,apt:curl,pacman:curl,brew:curl"
+  # ── telnet-based ─────────────────────────────────────────────
+  "star-wars|Star Wars Episode IV in ASCII|telnet towel.blinkenlights.nl|telnet|dnf:telnet,apt:telnet,pacman:inetutils,brew:telnet"
 )

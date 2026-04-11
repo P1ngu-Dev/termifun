@@ -10,10 +10,12 @@ _ui_loop() {
     local current_action="$NEXT_ACTION"
     NEXT_ACTION=""
     case "$current_action" in
-      launch)      _fzf_launch ;;
-      browse)      _fzf_browse ;;
-      help_launch) _show_fzf_help "launch" ;;
-      help_browse) _show_fzf_help "browse" ;;
+      launch)       _fzf_launch ;;
+      browse)       _fzf_browse ;;
+      online)       _fzf_online ;;
+      help_launch)  _show_fzf_help "launch" ;;
+      help_browse)  _show_fzf_help "browse" ;;
+      help_online)  _show_fzf_help "online" ;;
     esac
   done
 }
@@ -22,6 +24,7 @@ main() {
   _setup_colors
   _detect_pkg_manager
   _scan_tools
+  _scan_online_tools
 
   case "${1:-}" in
     --help|-h)
