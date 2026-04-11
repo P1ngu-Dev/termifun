@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # termifun - CLI Fun Tools Launcher
-# https://github.com/tunombre/termifun
+# https://github.com/P1ngu-Dev/termifun
 # License: MIT
 
 VERSION="0.1.0"
@@ -137,11 +137,19 @@ _scan_tools() {
 # ─────────────────────────────────────────
 _fzf_launch() {
   local count="${#INSTALLED[@]}"
-  local header="${count} installed tools · Enter to run · Esc to exit"
+  if [ "$count" -eq 0 ]; then
+    printf '\n%sNo tools installed!%s \nSwitching to browse mode...\n' "$YELLOW" "$RESET"
+    sleep 1.5
+    NEXT_ACTION="browse"
+    return 0
+  fi
 
-  local selection
-  selection=$(printf '%s\n' "${INSTALLED[@]}" | \
+  local header="${count} installed tools · Enter: run · Ctrl-b: browse · Ctrl-h: help · Esc: exit"
+
+  local output key selection
+  output=$(printf '%s\n' "${INSTALLED[@]}" | \
     fzf \
+      --expect=ctrl-b,ctrl-h \
       --prompt="⚡ termifun > " \
       --header="$header" \
       --header-first \
@@ -151,6 +159,19 @@ _fzf_launch() {
       --no-multi \
       --exact
   ) || return 0
+
+  [ -z "$output" ] && return 0
+
+  key=$(head -n1 <<< "$output")
+  selection=$(tail -n+2 <<< "$output")
+
+  if [ "$key" = "ctrl-b" ]; then
+    NEXT_ACTION="browse"
+    return
+  elif [ "$key" = "ctrl-h" ]; then
+    NEXT_ACTION="help_launch"
+    return
+  fi
 
   [ -z "$selection" ] && return 0
 
@@ -172,13 +193,19 @@ _fzf_launch() {
 # ─────────────────────────────────────────
 _fzf_browse() {
   local count="${#NOT_INSTALLED[@]}"
-  [ "$count" -eq 0 ] && printf '\n%sYou have all tools installed!%s\n\n' "$GREEN" "$RESET" && return 0
+  if [ "$count" -eq 0 ]; then
+    printf '\n%sYou have all tools installed!%s\n\n' "$GREEN" "$RESET"
+    sleep 2
+    NEXT_ACTION="launch"
+    return 0
+  fi
 
-  local header="${count} tools available to install · Enter to install · Esc to exit"
+  local header="${count} tools available to install · Enter: install · Ctrl-l: launch · Ctrl-h: help · Esc: exit"
 
-  local selection
-  selection=$(printf '%s\n' "${NOT_INSTALLED[@]}" | \
+  local output key selection
+  output=$(printf '%s\n' "${NOT_INSTALLED[@]}" | \
     fzf \
+      --expect=ctrl-l,ctrl-h \
       --prompt="📦 install > " \
       --header="$header" \
       --header-first \
@@ -188,6 +215,19 @@ _fzf_browse() {
       --no-multi \
       --exact
   ) || return 0
+
+  [ -z "$output" ] && return 0
+
+  key=$(head -n1 <<< "$output")
+  selection=$(tail -n+2 <<< "$output")
+
+  if [ "$key" = "ctrl-l" ]; then
+    NEXT_ACTION="launch"
+    return
+  elif [ "$key" = "ctrl-h" ]; then
+    NEXT_ACTION="help_browse"
+    return
+  fi
 
   [ -z "$selection" ] && return 0
 
@@ -204,9 +244,60 @@ _fzf_browse() {
       printf '\n%s▶ Installing:%s %s%s%s  via %s%s%s\n\n' \
         "$BOLD" "$RESET" "$GREEN" "$pkg" "$RESET" "$CYAN" "$PKG_MANAGER" "$RESET"
       eval "$PKG_INSTALL $pkg"
+      
+      printf '\n%sPress Enter to return to menu...%s' "$DIM" "$RESET"
+      read -r
+      _scan_tools
+      NEXT_ACTION="launch"
       return
     fi
     i=$((i + 1))
+  done
+}
+
+# ─────────────────────────────────────────
+# FZF HELP MENU
+# ─────────────────────────────────────────
+_show_fzf_help() {
+  local return_to="$1"
+  
+  clear
+  printf '\n%s%s⚡ TERMIFUN HELP & KEYBINDS%s\n' "$BOLD" "$CYAN" "$RESET"
+  printf '──────────────────────────────────────────────\n\n'
+  
+  printf '%sGENERAL NAVIGATION%s\n' "$BOLD" "$RESET"
+  printf '  %sUp/Down%s      Move selection up or down\n' "$GREEN" "$RESET"
+  printf '  %sEnter%s        Run (in Launch mode) or Install (in Browse mode)\n' "$GREEN" "$RESET"
+  printf '  %sEscape%s       Exit the menu\n\n' "$GREEN" "$RESET"
+  
+  printf '%sQUICK SWITCHING%s\n' "$BOLD" "$RESET"
+  printf '  %sCtrl-b%s       Switch to Browse mode (find new tools to install)\n' "$YELLOW" "$RESET"
+  printf '  %sCtrl-l%s       Switch to Launch mode (run installed tools)\n\n' "$YELLOW" "$RESET"
+  
+  printf '%sFEATURES%s\n' "$BOLD" "$RESET"
+  printf '  • Real-time fuzzy search by typing any part of the command or description.\n'
+  printf '  • Auto-detection of package manager (apt, dnf, pacman, brew).\n'
+  printf '  • Deduplication of commands.\n\n'
+
+  printf '%sPress Enter to return...%s' "$DIM" "$RESET"
+  read -r
+  
+  NEXT_ACTION="$return_to"
+}
+
+NEXT_ACTION=""
+
+_ui_loop() {
+  NEXT_ACTION="$1"
+  while [ -n "$NEXT_ACTION" ]; do
+    local current_action="$NEXT_ACTION"
+    NEXT_ACTION=""
+    case "$current_action" in
+      launch)      _fzf_launch ;;
+      browse)      _fzf_browse ;;
+      help_launch) _show_fzf_help "launch" ;;
+      help_browse) _show_fzf_help "browse" ;;
+    esac
   done
 }
 
@@ -291,7 +382,7 @@ main() {
       ;;
     --browse|-b)
       if command -v fzf >/dev/null 2>&1; then
-        _fzf_browse
+        _ui_loop "browse"
       else
         # Fallback without fzf: list with installation commands
         printf '\n%s%s📦 NOT INSTALLED TOOLS%s\n' "$BOLD" "$YELLOW" "$RESET"
@@ -309,12 +400,19 @@ main() {
       ;;
     "")
       if [ "${#INSTALLED[@]}" -eq 0 ]; then
-        printf '\n%sNo fun tools installed found.%s\n' "$YELLOW" "$RESET"
-        printf 'Run %stermifun --browse%s to see what you can install.\n\n' "$CYAN" "$RESET"
-        exit 0
+        if command -v fzf >/dev/null 2>&1; then
+          printf '\n%sNo fun tools installed found.%s Launching browse mode...\n' "$YELLOW" "$RESET"
+          sleep 1.5
+          _ui_loop "browse"
+          exit 0
+        else
+          printf '\n%sNo fun tools installed found.%s\n' "$YELLOW" "$RESET"
+          printf 'Run %stermifun --browse%s to see what you can install.\n\n' "$CYAN" "$RESET"
+          exit 0
+        fi
       fi
       if command -v fzf >/dev/null 2>&1; then
-        _fzf_launch
+        _ui_loop "launch"
       else
         _list_simple
       fi
